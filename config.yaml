@@ -1,0 +1,28 @@
+data_prep:
+    k_fold: 5
+    seed: 42
+    class_num: 3
+
+model_stage1:
+    window_length: 20
+    window_interval: 10
+    learning_rate: 0.001
+    hidden_size: 64
+    epochs: 10
+    batch_size: 32
+    validation_split: 0.2
+
+model_stage2:
+    max_sequence_len_stage2: 900
+    learning_rate: 0.001
+    filters: 64
+    kernel_size: 10
+    dropout: 0.3
+    embedding_dim: 32
+    epochs: 10
+    batch_size: 32
+    validation_split: 0.1
+    
+evaluation:
+    bg_class: 0
+    overlap: 0.5
