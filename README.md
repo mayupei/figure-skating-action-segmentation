@@ -73,7 +73,7 @@ Figure 6 displays frame-wise accuracy and segment-wise F1@50 on the test splits 
 </p>
 
 <p align="center">
-  <img src="figures/prediction_example.png" width="300"/>
+  <img src="figures/prediction_example.png" width="600"/>
   <br>
   <em>Figure 7: Model Predictions - An Example</em>
 </p>
