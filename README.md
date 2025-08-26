@@ -1,4 +1,20 @@
-# Action Segmentation for Figure Skating Competition Videos: A Skeleton-based Approach
+# Action Segmentation of Figure Skating Competition Videos: A Skeleton-based Approach
+
+## Quick Start
+- This project implements a two-stage LSTM-CNN framework for action segmentation of figure skating competition videos using skeleton data.
+- The LSTM stage applies a sliding-window approach to provide frame-wise predictions, and the CNN stage refines these predictions by capturing temporal dependencies between frame labels.
+- The model is evaluated with 5-fold cross-validation using both frame-wise accuracy and segmental F1@50, showing significant improvements over an LSTM model alone.
+```
+# 1. Create environment and install dependencies
+python -m venv .env
+source .env/bin/activate # (macOS/Linux)
+pip install -r requirements.txt
+
+# 2. Run the pipeline (including training, evaluation, etc)
+sbatch run_pipeline.sh
+
+# 3. Run generate_plots.ipynb to generate the plots
+```
 
 ## Introduction
 Figure skating is a sport in which skaters execute pre-planned technical elements (e.g., jumps, spins) within a choreographed routine set to music. In figure skating judging, judges often need to replay a technical element to determine its difficulty and execution. Under the current system, a replay operator is responsible for marking the start and end time of each element as it's being performed, allowing for quick access to replays during the review process. In this project, I aim to automate this process via action segmentation using a deep learning framework.
@@ -22,7 +38,7 @@ Each single-skater competition consists of two segments: the short program (SP) 
   <br>
   <em>Figure 1: Video Frame Lengths and Element Count</em>
 </p>
-Figure 2 shows the distribution of jump and spin durations in frames. On average, a jump takes 158 frames (≈5 seconds), which is shorter than a spin (414 frames, ≈14 seconds). Note that the actual airtime of a jump or the rotation time of a spin is shorter, since the ground-truth labels for both include the entry and exit transitions. This is consistent with judging practice, where judges also review entries and exits during replay.
+Figure 2 shows the distribution of jump and spin durations in frames. On average, a jump takes 158 frames (≈5 seconds), which is shorter than a spin (414 frames, ≈14 seconds). Note that the actual airtime of a jump or the rotation time of a spin is shorter, since the ground-truth labels for both include the entry and exit transitions.
 <p align="center">
   <img src="figures/element_duration.png" alt="Alt text" width="300"/>
   <br>
@@ -44,7 +60,9 @@ Figure 3 shows the element distribution for a particular SP video, and Figure 4 
   <em>Figure 4: Skeleton Examples</em>
 </p>
 
-To remove variation in scale and global position across frames, I normalize the skeletons to a consistent size and center them so that their center of mass is at the origin (0, 0, 0), which is a standard practice in the literature.
+To reduce computational cost and running time, I downsample the videos by taking every 10th frame, resulting in an effective frame rate of 3 fps. This frequency is sufficient given the nature of the task: the first and last ~10 frames of an element are generally entry and exit transitions, and the exact start and end times of an element are ambiguous anyway.
+
+Additionally, to remove variation in scale and global position across frames, I normalize the skeletons to a consistent size and center them so that their center of mass is at the origin (0, 0, 0), which is a standard practice in the literature.
 
 ## The Model and Experiments
 ### The Model
@@ -61,22 +79,27 @@ To tackle this issue, I feed the frame-wise predictions from the LSTM layer into
 ### Experiments
 I use 5-fold cross validation to evaluate the performances of the LSTM model alone (only the first stage) and the two-stage LSTM-CNN framework. The LSTM layer contains 64 units and operates on input sequences of length 20. The CNN stage first takes the first-stage predictions and embeds them into a 32-dimensional space, and then applies two 1D convolutional layers (64 filters, kernel size = 10, ReLU), each followed by a dropout layer (p = 0.3). To handle variable video lengths, sequences are padded; padded positions are excluded from loss/metrics via masking. Both stages are trained for 10 epochs with Adam (learning rate = 0.001) and batch size = 32.
 
-**Evaluation Metrics** I use frame-wise accuracy as a baseline metric. However, frame-wise metrics can be misleading for action segmentation tasks because they ignore segment boundaries and temporal consistency; a model may achieve high frame-wise accuracy while still suffering from severe over-segmentation errors. To evaluate the segmentation quality, I also report F1@50, which is a segment-wsie metric proposed by [[1]](#1). [[2]](#2) provides a very intuitive description of F1@50: a predicted action segment is first classified as a true positive (TP) or false positive (FP) by comparing its intersection over union (IoU) with respect to the corresponding expert annotation. If the IoU crosses a 50%, it is classified as a true positive segment (TP), if it does not, as a false positive segment (FP). The number of false-negative segments (FN) in a trial is calculated by subtracting the number of correctly predicted segments from the number of segments that the experts had demarcated. From the classified segments, the segmental F1-score for each action can be computed as
-$F1@50 = \frac{TP}{TP + \frac{1}{2}(FN+FP)}$. This metric penalizes over segmentation errors while allows for small temporal shift between the predictions and ground truch. This is appropriate for our setting, where the exact start and end times of an element are inherently ambiguous.
+**Evaluation Metrics** I use frame-wise accuracy as a baseline metric. However, frame-wise metrics can be misleading for action segmentation tasks because they ignore segment boundaries and temporal consistency; a model may achieve high frame-wise accuracy while still suffering from severe over-segmentation errors. To evaluate the segmentation quality, I also report F1@50, which is a segment-wise metric proposed by [[1]](#1). [[2]](#2) provides a very intuitive description of F1@50: a predicted action segment is first classified as a true positive (TP) or false positive (FP) by comparing its intersection over union (IoU) with respect to the corresponding expert annotation. If the IoU crosses a 50%, it is classified as a true positive segment (TP), if it does not, as a false positive segment (FP). The number of false-negative segments (FN) in a trial is calculated by subtracting the number of correctly predicted segments from the number of segments that the experts had demarcated. From the classified segments, the segmental F1-score for each action can be computed as
+$F1@50 = \frac{TP}{TP + \frac{1}{2}(FN+FP)}$. This metric penalizes over segmentation errors while allows for small temporal shift between the predictions and ground truth. This is appropriate for our setting, where the exact start and end times of an element are inherently ambiguous.
 
-Figure 6 displays frame-wise accuracy and segment-wise F1@50 on the test splits across five cross-validation folds, for both the first-stage predictions and the final predictions. Figure 7 plots the model predictions for one example video. We can see that the first-stage prediction achieves a decent accuracy score (0.88 on average), but it has a low F1@50 (0.32 on average) due to over-segmentation errors. The CNN stage successfully mitigates over-segmentation by incorporating local temporal dependencies in the label sequence, achieving 0.92 frame-wise accuracy and 0.89 F1@50 on average. A demo video with per-frame ground truth and model predictions is available on YouTube (<link>).
+Table 1 displays the average frame-wise accuracy and segment-wise F1@50 on the test splits across five cross-validation folds, for both the first-stage and the final predictions. Figure 7 plots the model predictions for one example video. We can see that the first-stage prediction achieves a decent accuracy score (0.88), but it has a low F1@50 (0.31) due to over-segmentation errors. The CNN stage successfully mitigates over-segmentation by incorporating local temporal dependencies in the label sequence, achieving 0.92 frame-wise accuracy and 0.89 F1@50. A demo video with per-frame ground truth and model predictions is available at [this](https://youtube.com/shorts/qOXkx_gUVEE?feature=share) YouTube link.
 
-<p align="center">
-  <img src="figures/performance_plot.png" width="300"/>
-  <br>
-  <em>Figure 6: Model Performance</em>
-</p>
+*Table 1: Model Performance*
+| Model | Accuracy | F1@50 |
+| :------- | :------: | -------: |
+| LSTM | 0.88 | 0.31 |
+| LSTM-CNN | 0.92 | 0.89 |
+
+
 
 <p align="center">
   <img src="figures/prediction_example.png" width="600"/>
   <br>
   <em>Figure 7: Model Predictions - An Example</em>
 </p>
+
+## Future Work
+The current model outputs the start and end times of elements as well as their broad types (jump or spin). This is sufficient to automate the replay operator’s work, since the model can return the correct segment based on element order. However, the exact element name (e.g., sit spin, layback spin) still needs to be identified by a technical specialist, as is currently the case. Future work could extend this approach by developing an action detection model that predicts each segment’s exact element name, thereby automating the technical specialist’s work as well.
 
 ## References
 <a id="1">[1]</a> 
