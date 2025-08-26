@@ -1,4 +1,4 @@
-# Action Segmentation of Figure Skating Competition Videos: A Skeleton-based Approach
+# Action Segmentation of Figure Skating Competition Videos: A Skeleton-Based Approach
 
 ## Quick Start
 - This project implements a two-stage LSTM-CNN framework for action segmentation of figure skating competition videos using skeleton data.
@@ -19,14 +19,14 @@ sbatch run_pipeline.sh
 ## Introduction
 Figure skating is a sport in which skaters execute pre-planned technical elements (e.g., jumps, spins) within a choreographed routine set to music. In figure skating judging, judges often need to replay a technical element to determine its difficulty and execution. Under the current system, a replay operator is responsible for marking the start and end time of each element as it's being performed, allowing for quick access to replays during the review process. In this project, I aim to automate this process via action segmentation using a deep learning framework.
 
-Instead of raw video frames, I work with the skeleton joints of the athlete extracted from video frames, which capture athlete's posture while filtering out irrelevant visual details such as the background color or audience movement. The model assigns a label to each frame (e.g., jump or spin) and outputs the start and end timestamps of each segment/element. As skeleton extraction methods are already well established, this project leverages existing skeleton-based figure skating video datasets and focuses on building the action segmentation model.
+Instead of raw video frames, I work with the skeleton joints of the athlete extracted from video frames, which capture the athlete's posture while filtering out irrelevant visual details such as the background color or audience movement. The model assigns a label to each frame (e.g., jump or spin) and outputs the start and end timestamps of each segment/element. As skeleton extraction methods are already well established, this project leverages existing skeleton-based figure skating video datasets and focuses on building the action segmentation model.
 
 ## Data and Summary Statistics
 The datasets used in this project are [MCFS](https://shenglanliu.github.io/mcfs-dataset/) and [MMFS](https://github.com/dingyn-Reno/MMFS/tree/main). These two datasets were developed by the same team and both used videos from the 2017-2019 World Figure Skating Championships.
 
 MCFS contains 271 videos of single-skater competition routines. Each video is 162–285 s long (≈2.7–4.75 min) and recorded at 30 fps. Pose skeletons were extracted with OpenPose (BODY_25). The dataset provides per-frame (frame-wise) annotations, which are essential for supervised training in action segmentation. However, the pose quality is imperfect: 56% of frames have at least one missing joint, and 19% of frames have at least three missing joints.
 
-MMFS consists of 1176 videos of single-skater competition routines, among which 222 routines share the same video source as MCFS. In MMFS, skeletons are extracted in the COCO 17-keypoint format. Unlike MCFS, MMFS does not suffer from missing data issues. However, it only provides routine-level annotations of elements performed, without frame-wise labels.
+MMFS consists of 1176 videos of single-skater competition routines, of which 222 routines share the same video source as MCFS. In MMFS, skeletons are extracted in the COCO 17-keypoint format. Unlike MCFS, MMFS does not suffer from missing data issues. However, it only provides routine-level annotations of elements performed, without frame-wise labels.
 
 In order to use the best available data, I focus on the 222 shared routines between MCFS and MMFS. Specifically, I use the pose keypoints from MMFS as features and the per-frame annotations from MCFS as labels. This pairing allows me to combine high-quality skeleton features with detailed frame-level labels.
 
@@ -50,7 +50,7 @@ Figure 3 shows the element distribution for a particular SP video, and Figure 4 
 <p align="center">
   <img src="figures/element_distribution_example.png" alt="Alt text" width="600"/>
   <br>
-  <em>Figure 3: Element Distribution Exmple</em>
+  <em>Figure 3: Element Distribution Example</em>
 </p>
 
 <p align="center">
@@ -77,10 +77,10 @@ To tackle this issue, I feed the frame-wise predictions from the LSTM layer into
 </p>
 
 ### Experiments
-I use 5-fold cross validation to evaluate the performances of the LSTM model alone (only the first stage) and the two-stage LSTM-CNN framework. The LSTM layer contains 64 units and operates on input sequences of length 20. The CNN stage first takes the first-stage predictions and embeds them into a 32-dimensional space, and then applies two 1D convolutional layers (64 filters, kernel size = 10, ReLU), each followed by a dropout layer (p = 0.3). To handle variable video lengths, sequences are padded; padded positions are excluded from loss/metrics via masking. Both stages are trained for 10 epochs with Adam (learning rate = 0.001) and batch size = 32.
+I use 5-fold cross-validation to evaluate the performances of the LSTM model alone (only the first stage) and the two-stage LSTM-CNN framework. The LSTM layer contains 64 units and operates on input sequences of length 20. The CNN stage first takes the first-stage predictions and embeds them into a 32-dimensional space, and then applies two 1D convolutional layers (64 filters, kernel size = 10, ReLU), each followed by a dropout layer (p = 0.3). To handle variable video lengths, sequences are padded; padded positions are excluded from loss/metrics via masking. Both stages are trained for 10 epochs with Adam (learning rate = 0.001) and batch size = 32.
 
 **Evaluation Metrics** I use frame-wise accuracy as a baseline metric. However, frame-wise metrics can be misleading for action segmentation tasks because they ignore segment boundaries and temporal consistency; a model may achieve high frame-wise accuracy while still suffering from severe over-segmentation errors. To evaluate the segmentation quality, I also report F1@50, which is a segment-wise metric proposed by [[1]](#1). [[2]](#2) provides a very intuitive description of F1@50: a predicted action segment is first classified as a true positive (TP) or false positive (FP) by comparing its intersection over union (IoU) with respect to the corresponding expert annotation. If the IoU crosses a 50%, it is classified as a true positive segment (TP), if it does not, as a false positive segment (FP). The number of false-negative segments (FN) in a trial is calculated by subtracting the number of correctly predicted segments from the number of segments that the experts had demarcated. From the classified segments, the segmental F1-score for each action can be computed as
-$F1@50 = \frac{TP}{TP + \frac{1}{2}(FN+FP)}$. This metric penalizes over segmentation errors while allows for small temporal shift between the predictions and ground truth. This is appropriate for our setting, where the exact start and end times of an element are inherently ambiguous.
+$F1@50 = \frac{TP}{TP + \frac{1}{2}(FN+FP)}$. This metric penalizes over segmentation errors while allowing for small temporal shifts between the predictions and ground truth. This is appropriate for our setting, where the exact start and end times of an element are inherently ambiguous.
 
 Table 1 displays the average frame-wise accuracy and segment-wise F1@50 on the test splits across five cross-validation folds, for both the first-stage and the final predictions. Figure 7 plots the model predictions for one example video. We can see that the first-stage prediction achieves a decent accuracy score (0.88), but it has a low F1@50 (0.31) due to over-segmentation errors. The CNN stage successfully mitigates over-segmentation by incorporating local temporal dependencies in the label sequence, achieving 0.92 frame-wise accuracy and 0.89 F1@50. A demo video with per-frame ground truth and model predictions is available at [this](https://youtube.com/shorts/qOXkx_gUVEE?feature=share) YouTube link.
 
