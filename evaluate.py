@@ -113,8 +113,8 @@ def evaluate_one_fold(split):
     )
 
     eval_dict = {
-        "stage1": {"accuracy": accuracy1, "overlap f1": overlap_f1_1},
-        "stage2": {"accuracy": accuracy2, "overlap f1": overlap_f1_2},
+        "Stage 1": {"Accuracy": accuracy1, "F1@50": overlap_f1_1},
+        "Stage 2": {"Accuracy": accuracy2, "F1@50": overlap_f1_2},
     }
     with open(os.path.join(EVAL_PATH, f"performance_{split}.json"), "w") as f:
         json.dump(eval_dict, f, indent=4)
@@ -133,9 +133,9 @@ def main():
         
     ### take the average across folds
     ave_dict = {}
-    for stage in ["stage1", "stage2"]:
+    for stage in ["Stage 1", "Stage 2"]:
         ave_dict[stage] = {}
-        for metric in ["accuracy", "overlap f1"]:
+        for metric in ["Accuracy", "F1@50"]:
             metric_mean = np.mean([d[stage][metric] for d in eval_dicts])
             ave_dict[stage][metric] = metric_mean
             
