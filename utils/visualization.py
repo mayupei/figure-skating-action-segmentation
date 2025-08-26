@@ -5,7 +5,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 
-from file_paths import VIDEO_PATH
+from file_paths import VIDEO_PATH, FIGURE_PATH
 
 BONES = [
     (0, 1),  # Nose → Left Eye
@@ -61,3 +61,25 @@ def create_video_with_predictions(skeletons, preds, labels, file_name):
     
     anim = FuncAnimation(fig, update, frames=skeletons.shape[0], interval=30, blit=False)
     anim.save(os.path.join(VIDEO_PATH, f"{file_name}.mp4"), writer='ffmpeg', fps=30)
+    
+    
+def generate_skeleton_plot_one_frame(frame, title, file_name):    
+    fig = plt.figure(figsize=(4, 4))
+    ax = fig.add_subplot(111, projection="3d")
+    ax.set_title(title)
+    ax.set_xlabel("X")
+    ax.set_ylabel("Y")
+    ax.set_zlabel("Z")
+    
+    # set equal axes
+    set_equal_axes(ax, frame)
+    
+    ax.scatter(frame[:,0], frame[:,1], frame[:,2], c = "blue")
+
+    for b in BONES:
+        ax.plot([frame[b[0], 0], frame[b[1], 0]],
+                 [frame[b[0], 1], frame[b[1], 1]],
+                  [frame[b[0], 2], frame[b[1], 2]], c = "red")
+        
+    plt.show()
+    fig.savefig(os.path.join(FIGURE_PATH, file_name), bbox_inches="tight")
