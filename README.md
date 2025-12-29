@@ -11,6 +11,7 @@ source .env/bin/activate # (macOS/Linux)
 pip install -r requirements.txt
 
 # 2. Run the pipeline (including training, evaluation, etc)
+cd scripts
 sbatch run_pipeline.sh
 
 # 3. Run generate_plots.ipynb to generate the plots
