@@ -25,7 +25,7 @@ source .env/bin/activate # (macOS/Linux)
 pip install -r requirements.txt
 
 # 2. Run the pipeline (including training, evaluation, etc)
-# # Change BASE_PATH in scripts/file_paths.py to the absolute path of this project on your machine.
+# Change BASE_PATH in scripts/file_paths.py to the absolute path of this project on your machine.
 # All training and runtime logs saved to /logs
 # Evaluation summaries saved to /evaluations
 cd scripts
