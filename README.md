@@ -1,9 +1,23 @@
 # Action Segmentation of Figure Skating Competition Videos: A Skeleton-Based Approach
 
-## Quick Start
+## Project Summary
 - This project implements a two-stage LSTM-CNN framework for action segmentation of figure skating competition videos using skeleton data.
 - The LSTM stage applies a sliding-window approach to provide frame-wise predictions, and the CNN stage refines these predictions by capturing temporal dependencies between frame labels.
 - The model is evaluated with 5-fold cross-validation using both frame-wise accuracy and segmental F1@50, showing significant improvements over an LSTM model alone.
+
+## Quick Start
+Data used in this project comes from the 222 shared routines between [MCFS](https://shenglanliu.github.io/mcfs-dataset/) and [MMFS](https://github.com/dingyn-Reno/MMFS/tree/main) (see "Data and Summary Statistics" section for more details). Before running the pipeline, please prepare data as follows:
+1. Download the frame-level labels from MCFS
+    - Link: ``https://shenglanliu.github.io/mcfs-dataset/``
+    - Source folder: ``MSFS/MCFS-4/groundTruth``
+    - Place into (relative to the project root): ``data/raw_data/labels``
+2. Download skeleton features from MMFS
+    - Link: ``https://github.com/dingyn-Reno/MMFS/tree/main``
+    - Source folder: ``MMFS/skeleton``
+    - Place into (relative to the project root): ``data/raw_data/features``
+
+The 222 shared routines can be identified by matching common file names across the two datasets.
+
 ```
 # 1. Create environment and install dependencies
 python -m venv .env
@@ -11,8 +25,10 @@ source .env/bin/activate # (macOS/Linux)
 pip install -r requirements.txt
 
 # 2. Run the pipeline (including training, evaluation, etc)
+# All training and runtime logs saved to /logs
+# Evaluation summaries saved to /evaluations
 cd scripts
-sbatch run_pipeline.sh
+sbatch run_pipeline.sh # (requires a SLURM system)
 
 # 3. Run generate_plots.ipynb to generate the plots
 ```

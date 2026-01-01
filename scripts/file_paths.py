@@ -1,6 +1,6 @@
 import os
 
-BASE_PATH = r"/project/6068053/myp3538/action_detection"
+BASE_PATH = "[[INSERT YOUR PATH HERE]]"
 DATA_PATH = os.path.join(BASE_PATH, "data")
 RAW_DATA_PATH = os.path.join(DATA_PATH, "raw_data")
 OUTPUT_PATH = os.path.join(DATA_PATH, "predictions")
