@@ -1,12 +1,11 @@
+import argparse
 import json
 import os
-import argparse
 
 import numpy as np
+from file_paths import BASE_PATH, DATA_PATH, EVAL_PATH, OUTPUT_PATH
 from sklearn.metrics import accuracy_score
 from tensorflow import keras
-
-from file_paths import BASE_PATH, DATA_PATH, OUTPUT_PATH, EVAL_PATH
 from utils.config import get_config
 from utils.data_prep import stacking_and_split, stage2_data_by_file
 from utils.metrics import OverlapF1
@@ -14,9 +13,12 @@ from utils.models import masked_accuracy, masked_categorical_crossentropy
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="Train the models on the test set of a split.")
-    parser.add_argument('--split', type=int, required=True,
-                        help='an integer starting from 0')
+    parser = argparse.ArgumentParser(
+        description="Train the models on the test set of a split."
+    )
+    parser.add_argument(
+        "--split", type=int, required=True, help="an integer starting from 0"
+    )
     return parser.parse_args()
 
 
@@ -118,19 +120,19 @@ def evaluate_one_fold(split):
     }
     with open(os.path.join(EVAL_PATH, f"performance_{split}.json"), "w") as f:
         json.dump(eval_dict, f, indent=4)
-        
+
     return eval_dict
 
 
 def main():
     config = get_config()
-    
+
     ### evaluate the performance for each fold
     fold_num = config["data_prep"]["k_fold"]
     eval_dicts = []
     for i in range(fold_num):
         eval_dicts.append(evaluate_one_fold(i))
-        
+
     ### take the average across folds
     ave_dict = {}
     for stage in ["Stage 1", "Stage 2"]:
@@ -138,9 +140,13 @@ def main():
         for metric in ["Accuracy", "F1@50"]:
             metric_mean = np.mean([d[stage][metric] for d in eval_dicts])
             ave_dict[stage][metric] = metric_mean
-            
+
     with open(os.path.join(EVAL_PATH, "performance_overall.json"), "w") as f:
         json.dump(ave_dict, f, indent=4)
-        
+
+
 if __name__ == "__main__":
+    os.makedirs("../data/predictions/ground_truth", exist_ok=True)
+    os.makedirs("../data/predictions/stage1", exist_ok=True)
+    os.makedirs("../data/predictions/stage2", exist_ok=True)
     main()
